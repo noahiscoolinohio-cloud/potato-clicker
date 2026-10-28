@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Potato Clicker</title>
+<style>
+  :root {
+    --kraft: #ddd4bf;
+    --wood: #6b4226;
+    --wood-dark: #392919;
+    --ink: #8d4943;
+    --ink-dark: #6a3733;
+    --charcoal: #2b2016;
+    --cream: #f5f1e6;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #34304f 0%, #6d5470 30%, #c4877a 58%, #dcb88c 75%, #eadcb8 100%) fixed;
+    color: var(--charcoal);
+    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    display: flex;
+    justify-content: center;
+    padding: 28px 14px;
+    transition: padding-right 0.3s ease;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; }
+  button:focus-visible, .node:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+  .wrap { width: 100%; max-width: 460px; position: relative; z-index: 2; }
+
+  .drifters { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .drifter { position: absolute; bottom: -60px; opacity: 0.35; animation: drift linear infinite; }
+  @keyframes drift {
+    from { transform: translateY(0) rotate(0deg); }
+    to { transform: translateY(-115vh) rotate(360deg); }
+  }
+
+  .crate-sign {
+    background: var(--wood);
+    border: 4px solid var(--wood-dark);
+    border-radius: 3px;
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
+  h1 { margin: 0; font-size: 2rem; color: var(--cream); text-shadow: 2px 2px 0 var(--wood-dark); }
+  .slate {
+    background: var(--charcoal);
+    color: var(--cream);
+    border: 6px solid var(--wood-dark);
+    border-radius: 3px;
+    padding: 14px 18px;
+    text-align: center;
+    margin-bottom: 22px;
+    box-shadow: 5px 5px 0 rgba(0,0,0,0.2);
+  }
+  .slate .count { font-size: 2.2rem; font-weight: bold; }
+  .slate .unit { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; }
+  .slate .rate { font-size: 0.85rem; margin-top: 8px; color: #c3b081; }
+  .click-area { display: flex; justify-content: center; }
+  .potato-disc {
+    background: #cbb583;
+    border: 6px dashed var(--ink);
+    border-radius: 50%;
+    width: 190px;
+    height: 190px;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.08s ease;
+  }
+  #potato-btn:hover { background-color: #d9c69a; }
+  #potato-btn:active { transform: scale(0.9); }
+  .potato-wrap { position: relative; display: block; width: 150px; height: 150px; pointer-events: none; }
+  .potato-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+  .potato-svg.rainbow { animation: hue 4s linear infinite; }
+  @keyframes hue {
+    from { filter: hue-rotate(0deg) saturate(1.15); }
+    to { filter: hue-rotate(360deg) saturate(1.15); }
+  }
+  .potato-disc.ring-wood { border: 6px solid var(--wood-dark); box-shadow: inset 0 0 0 5px var(--wood); }
+  .potato-disc.ring-blue { border: 6px dotted #3c6ea6; }
+  .potato-disc.ring-green { border: 6px dashed #55713c; }
+  .potato-disc.ring-gold { border: 6px solid #ad9159; box-shadow: 0 0 18px #d6bb84; }
+  .potato-disc.ring-neon { border: 6px solid #e495ce; box-shadow: 0 0 14px #e495ce, inset 0 0 12px rgba(206,150,190,0.5); }
+  .potato-disc.ring-rainbow {
+    border: 6px solid transparent;
+    background: linear-gradient(#cbb583, #cbb583) padding-box, conic-gradient(#c5685e, #c4a93c, #4eac76, #5591ba, #9b59b6, #c5685e) border-box;
+  }
+  .spark { position: fixed; pointer-events: none; z-index: 59; font-size: 20px; animation: spark 0.7s ease-out forwards; }
+  @keyframes spark {
+    from { opacity: 1; transform: translate(0, 0) scale(1); }
+    to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.6); }
+  }
+
+  .float-pop {
+    position: fixed; pointer-events: none; font-weight: bold;
+    color: var(--ink-dark); font-size: 1.1rem; z-index: 60;
+    text-shadow: 1px 1px 0 var(--cream);
+    animation: floatUp 0.8s ease-out forwards;
+  }
+  .float-pop.crit { color: var(--ink); font-size: 1.5rem; }
+  @keyframes floatUp {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-50px); }
+  }
+
+  .golden-potato {
+    position: fixed; font-size: 48px; cursor: pointer; z-index: 50;
+    filter: drop-shadow(0 0 10px #dbc26e);
+    animation: bob 1.4s ease-in-out infinite;
+  }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .notes {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    z-index: 90; pointer-events: none; width: max-content; max-width: 92vw;
+  }
+  .note {
+    background: var(--cream); border: 2px solid var(--ink); border-radius: 3px;
+    padding: 8px 16px; font-size: 0.9rem;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+  }
+  .note.gold { background: #ece1bf; border-color: #ad9159; }
+  .note.ach { border-color: #ad9159; background: #f7f2de; }
+
+  .slate.frenzy { border-color: #ad9159; box-shadow: 0 0 0 4px #d6bb84, 5px 5px 0 rgba(0,0,0,0.2); }
+  .slate .frenzy-line { color: #d6bb84; font-weight: bold; font-size: 0.9rem; margin-top: 8px; min-height: 1.2em; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0;
+    height: 100vh; width: min(640px, 100vw);
+    background: var(--kraft);
+    border-left: 4px solid var(--wood-dark);
+    box-shadow: -6px 0 0 rgba(0,0,0,0.22);
+    z-index: 30;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  .drawer.open { transform: translateX(0); }
+  @media (min-width: 1020px) { body.drawer-open { padding-right: 660px; } }
+
+  .handles {
+    position: absolute; left: -48px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .drawer-handle {
+    position: relative;
+    width: 44px; padding: 16px 0;
+    background: var(--wood);
+    background-image: repeating-linear-gradient(90deg, var(--wood) 0px, var(--wood) 14px, #5a341f 15px, var(--wood) 16px);
+    color: var(--cream);
+    border: 4px solid var(--wood-dark); border-right: none;
+    border-radius: 6px 0 0 6px;
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    font-size: 0.95rem; font-weight: bold;
+    box-shadow: -3px 3px 0 rgba(0,0,0,0.22);
+    text-shadow: 2px 2px 0 var(--wood-dark);
+  }
+  .drawer-handle.active { background: var(--cream); color: var(--charcoal); text-shadow: none; }
+  .panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .panel.hidden { display: none; }
+  .drawer-handle:hover:not(.active) { background-color: #7c4e2e; }
+  .badge {
+    position: absolute; top: -10px; left: -10px;
+    min-width: 24px; height: 24px; padding: 0 6px;
+    background: var(--ink); color: var(--cream);
+    border: 2px solid var(--cream); border-radius: 12px;
+    font-size: 0.75rem; line-height: 20px; text-align: center;
+    writing-mode: horizontal-tb; text-shadow: none;
+  }
+  .badge.hidden { display: none; }
+
+  .map-view {
+    position: relative; flex: 1; overflow: hidden;
+    touch-action: none; cursor: grab;
+    background-color: var(--kraft);
+    background-image:
+      repeating-linear-gradient(45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px);
+  }
+  .map-view.dragging { cursor: grabbing; }
+  .map { position: absolute; left: 0; top: 0; will-change: transform; }
+  .map-lines { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .map-lines line { stroke-width: 5; display: none; }
+  .map-lines line.open { stroke: #ad9159; stroke-dasharray: 9 7; display: inline; }
+  .map-lines line.done { stroke: #55713c; display: inline; }
+
+  .map-ui { position: absolute; z-index: 5; }
+  .map-counter {
+    top: 14px; left: 14px;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--charcoal); color: var(--cream);
+    border: 4px solid var(--wood-dark); border-radius: 3px;
+    padding: 6px 12px;
+    font-size: 1.15rem; font-weight: bold;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+    pointer-events: none;
+  }
+  .map-counter .c-icon { font-size: 1.4rem; line-height: 1; }
+  .map-btns { top: 14px; right: 14px; display: flex; gap: 8px; }
+  .px-btn {
+    width: 40px; height: 40px;
+    background: var(--cream); color: var(--charcoal);
+    border: 3px solid var(--wood-dark); border-radius: 3px;
+    font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+  }
+  .px-btn:hover { background: #e9e3d3; }
+  .px-btn.close { background: var(--ink); color: var(--cream); }
+  .px-btn.close:hover { background: var(--ink-dark); }
+
+  .node {
+    position: absolute; width: 64px; height: 64px;
+    background: var(--cream);
+    border: 4px solid var(--wood-dark);
+    border-radius: 3px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 2;
+  }
+  .node .sprite { font-size: 34px; line-height: 1; pointer-events: none; }
+  .node .eff {
+    position: absolute; right: -9px; bottom: -9px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--wood-dark); color: var(--cream);
+    border: 2px solid var(--cream);
+    font-size: 0.78rem; font-weight: bold; line-height: 16px; text-align: center;
+    pointer-events: none;
+  }
+  .node.ready  { border: 4px dashed var(--ink); background: #f7f2de; }
+  .node.ready:hover { background: #efe6c0; }
+  .node.poor   { background: var(--cream); border-color: var(--wood); }
+  .node.poor .sprite { opacity: 0.6; }
+  .node.owned  { background: #dfe9cc; border-color: #55713c; }
+  .node.owned .eff { background: #55713c; }
+  .node.locked { background: #cdbb92; border-color: #8a7348; box-shadow: 2px 2px 0 rgba(0,0,0,0.15); }
+  .node.locked .sprite { opacity: 0.45; filter: grayscale(1); }
+  .node.locked .eff { display: none; }
+  .node.final.ready, .node.final.poor { background: #ece1bf; border-color: #ad9159; }
+  .node.final.ready { border-style: dashed; border-color: var(--ink); }
+  .node.selected { outline: 3px solid var(--charcoal); outline-offset: 4px; }
+
+  .drawer-foot {
+    background: var(--charcoal);
+    border-top: 4px solid var(--wood-dark);
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 116px;
+    color: var(--cream);
+  }
+  .foot-name { color: #d6bb84; font-size: 1.05rem; font-weight: bold; }
+  .foot-flavor { font-size: 0.85rem; font-style: italic; margin-top: 3px; color: #ddd4bf; }
+  .foot-effect { font-size: 0.85rem; margin-top: 4px; opacity: 0.9; }
+  .foot-req { font-size: 0.8rem; margin-top: 4px; color: #c3b081; }
+  #research-btn {
+    flex-shrink: 0;
+    background: var(--ink); color: var(--cream);
+    border: 2px solid var(--cream); border-radius: 3px;
+    padding: 10px 16px; font-size: 0.9rem; cursor: pointer;
+  }
+  #research-btn:hover:not(:disabled) { background: var(--ink-dark); }
+  #research-btn:disabled { background: #4a3b2c; color: #9a8a74; border-color: #6b5a44; cursor: not-allowed; }
+
+  .ach-head {
+    background: var(--charcoal); color: var(--cream);
+    border-bottom: 4px solid var(--wood-dark);
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .ach-head h2 { margin: 0; font-size: 1.2rem; color: #d6bb84; }
+  .ach-head .sub { font-size: 0.8rem; opacity: 0.85; margin-top: 3px; }
+  .ach-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    background-color: var(--kraft);
+    background-image:
+      repeating-linear-gradient(45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px);
+  }
+  .ward-head {
+    background: var(--charcoal); color: var(--cream);
+    border-bottom: 4px solid var(--wood-dark);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ward-head h2 { margin: 0; font-size: 1.2rem; color: #d6bb84; }
+  .ward-head .sub { font-size: 0.8rem; opacity: 0.85; margin-top: 3px; }
+  .ward-head .px-btn { margin-left: auto; flex-shrink: 0; }
+  .ward-preview { width: 100px; height: 100px; flex-shrink: 0; }
+  .ward-preview .potato-disc { transform: scale(0.52); transform-origin: top left; cursor: default; }
+  .ward-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    background-color: var(--kraft);
+    background-image:
+      repeating-linear-gradient(45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px);
+  }
+  .ward-slot h3 {
+    margin: 2px 0 8px; font-size: 1rem; color: var(--ink-dark);
+    border-bottom: 2px solid var(--wood-dark); padding-bottom: 3px;
+  }
+  .ward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 18px; }
+  .cos {
+    background: var(--cream); color: var(--charcoal);
+    border: 3px solid var(--wood-dark); border-radius: 3px;
+    padding: 6px 4px 7px; text-align: center; cursor: pointer;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.18); font-family: inherit;
+  }
+  .cos:hover:not(.locked) { background: #f7f2de; }
+  .cos .c-icon { display: block; font-size: 1.8rem; line-height: 1.25; }
+  .cos .mini { display: block; width: 58px; height: 58px; margin: 0 auto; }
+  .cos .mini .potato-wrap { width: 58px; height: 58px; }
+  .cos.locked .mini { opacity: 0.45; filter: grayscale(1); }
+  .cos .c-name { display: block; font-size: 0.74rem; font-weight: bold; margin-top: 2px; }
+  .cos .c-hint { display: block; font-size: 0.64rem; color: var(--wood-dark); margin-top: 2px; }
+  .cos.equipped { background: #f7f2de; border: 3px dashed var(--ink); }
+  .cos.locked { background: #cdbb92; border-color: #8a7348; cursor: not-allowed; box-shadow: none; }
+  .cos.locked .c-icon { opacity: 0.45; filter: grayscale(1); }
+  .ach-card .a-reward { font-size: 0.74rem; color: var(--ink-dark); margin-top: 3px; }
+  .ach-card {
+    display: flex; align-items: center; gap: 12px;
+    background: #f7f2de; border: 3px solid #ad9159; border-radius: 3px;
+    padding: 8px 12px; margin-bottom: 10px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.18);
+  }
+  .ach-card .a-icon { font-size: 1.9rem; width: 42px; text-align: center; line-height: 1; }
+  .ach-card .a-name { font-weight: bold; }
+  .ach-card .a-desc { font-size: 0.8rem; color: var(--wood-dark); margin-top: 2px; }
+  .ach-card.locked { background: #cdbb92; border-color: #8a7348; box-shadow: 2px 2px 0 rgba(0,0,0,0.12); }
+  .ach-card.locked .a-icon { opacity: 0.45; filter: grayscale(1); }
+  .ach-card.locked .a-name { color: #5b4a2c; }
+
+  .ending-overlay {
+    position: fixed; inset: 0; background: rgba(43,32,22,0.85);
+    display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .sound-btn {
+    position: fixed; left: 14px; bottom: 14px; z-index: 25;
+    width: 44px; height: 44px; font-size: 1.3rem;
+    background: var(--cream); border: 3px solid var(--wood-dark); border-radius: 3px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.22); cursor: pointer;
+  }
+  .sound-btn:hover { background: #e9e3d3; }
+  .stats-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    background-color: var(--kraft);
+    background-image:
+      repeating-linear-gradient(45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, rgba(67,41,15,0.05) 0px, rgba(67,41,15,0.05) 1px, transparent 1px, transparent 7px);
+  }
+  .stat-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 4px; border-bottom: 1px dashed var(--wood); font-size: 0.9rem; }
+  .stat-row span:last-child { font-weight: bold; color: var(--ink-dark); text-align: right; }
+  .box {
+    background: var(--cream); border: 3px solid var(--wood-dark); border-radius: 3px;
+    padding: 12px; margin-top: 16px; box-shadow: 3px 3px 0 rgba(0,0,0,0.18);
+  }
+  .box h3 { margin: 0 0 6px; font-size: 1.05rem; color: var(--ink-dark); }
+  .box p { margin: 0 0 10px; font-size: 0.85rem; }
+  .big-btn {
+    background: var(--ink); color: var(--cream);
+    border: 2px solid var(--wood-dark); border-radius: 3px;
+    padding: 9px 14px; font-size: 0.9rem; cursor: pointer;
+  }
+  .big-btn:hover:not(:disabled) { background: var(--ink-dark); }
+  .big-btn:disabled { background: #4a3b2c; color: #9a8a74; border-color: #6b5a44; cursor: not-allowed; }
+  .big-btn.alt { background: var(--cream); color: var(--charcoal); }
+  .big-btn.alt:hover:not(:disabled) { background: #e9e3d3; }
+  .ending-box .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .ending-box .row button { margin-top: 0; }
+  .ending-box button.alt { background: var(--cream); color: var(--charcoal); }
+  .ending-box button.alt:hover { background: #e9e3d3; }
+  @media (max-height: 600px) {
+    .drawer-handle { padding: 10px 0; font-size: 0.85rem; }
+    .handles { gap: 6px; }
+  }
+  .ending-box {
+    background: var(--cream); border: 5px solid var(--wood-dark); border-radius: 4px;
+    padding: 28px 24px; max-width: 420px; text-align: center;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.35);
+  }
+  .ending-potato { font-size: 64px; line-height: 1.1; }
+  .ending-box h2 { margin: 8px 0; font-size: 1.8rem; color: var(--ink-dark); }
+  .ending-box p { font-size: 0.92rem; margin: 8px 0; }
+  .ending-box button {
+    margin-top: 12px; background: var(--ink); color: var(--cream);
+    border: 2px solid var(--wood-dark); border-radius: 3px; padding: 8px 18px; cursor: pointer;
+  }
+  .ending-box button:hover { background: var(--ink-dark); }
+</style>
+</head>
+<body>
+<div class="drifters" id="drifters"></div>
+<div class="notes" id="notes"></div>
+<button class="sound-btn" id="sound-btn" aria-label="Turn sound on or off">🔊</button>
+
+<div class="wrap">
+  <div class="crate-sign"><h1>🥔 Potato Clicker</h1></div>
+
+  <div class="slate" id="slate">
+    <div class="count" id="potato-count">0</div>
+    <div class="unit">potatoes</div>
+    <div class="rate" id="rate-display">+0 per click · +0 per second</div>
+    <div class="frenzy-line" id="frenzy-line"></div>
+  </div>
+
+  <div class="click-area">
+    <button id="potato-btn" class="potato-disc" aria-label="Click to harvest a potato"></button>
+  </div>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Upgrades and achievements">
+  <div class="handles">
+    <button class="drawer-handle" id="drawer-handle" aria-expanded="false">
+      Upgrades
+      <span class="badge hidden" id="ready-badge">0</span>
+    </button>
+    <button class="drawer-handle" id="ach-handle" aria-expanded="false">
+      Achievements
+      <span class="badge hidden" id="ach-badge">0</span>
+    </button>
+    <button class="drawer-handle" id="ward-handle" aria-expanded="false">
+      Wardrobe
+      <span class="badge hidden" id="ward-badge">0</span>
+    </button>
+    <button class="drawer-handle" id="stats-handle" aria-expanded="false">Stats</button>
+  </div>
+
+  <div class="panel" id="panel-upgrades">
+    <div class="map-view" id="map-view">
+      <div class="map" id="map"></div>
+      <div class="map-ui map-counter"><span class="c-icon">🥔</span><span id="counter-num">0</span></div>
+      <div class="map-ui map-btns">
+        <button class="px-btn" id="home-btn" aria-label="Recenter map">🏠</button>
+        <button class="px-btn close" id="close-btn" aria-label="Close">✕</button>
+      </div>
+    </div>
+
+    <div class="drawer-foot">
+      <div>
+        <div class="foot-name" id="foot-name">Tap a square</div>
+        <div class="foot-flavor" id="foot-flavor"></div>
+        <div class="foot-effect" id="foot-effect">Drag the map around and tap anything that looks interesting.</div>
+        <div class="foot-req" id="foot-req"></div>
+      </div>
+      <button id="research-btn" disabled>Buy</button>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="panel-ach">
+    <div class="ach-head">
+      <div>
+        <h2>Achievements</h2>
+        <div class="sub" id="ach-sub"></div>
+      </div>
+      <button class="px-btn close" id="ach-close" aria-label="Close">✕</button>
+    </div>
+    <div class="ach-body" id="ach-list"></div>
+  </div>
+
+  <div class="panel hidden" id="panel-ward">
+    <div class="ward-head">
+      <div class="ward-preview"><div class="potato-disc" id="preview-disc"></div></div>
+      <div>
+        <h2>Wardrobe</h2>
+        <div class="sub" id="ward-sub"></div>
+      </div>
+      <button class="px-btn close" id="ward-close" aria-label="Close">✕</button>
+    </div>
+    <div class="ward-body" id="ward-body"></div>
+  </div>
+
+  <div class="panel hidden" id="panel-stats">
+    <div class="ach-head">
+      <div>
+        <h2>Stats</h2>
+        <div class="sub" id="stats-sub"></div>
+      </div>
+      <button class="px-btn close" id="stats-close" aria-label="Close">✕</button>
+    </div>
+    <div class="stats-body">
+      <div id="stats-list"></div>
+
+      <div class="box">
+        <h3>Replant the farm</h3>
+        <p id="replant-text"></p>
+        <button class="big-btn" id="replant-btn">Replant</button>
+      </div>
+
+      <div class="box">
+        <h3>Saving</h3>
+        <p id="save-info"></p>
+      </div>
+
+      <div class="box">
+        <h3>Sound</h3>
+        <button class="big-btn alt" id="sound-setting"></button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function() {
+  const state = {
+    potatoes: 0, perClick: 1, perSecond: 0,
+    mult: 1, crit: 0, goldDelay: 1, goldBonus: 0, discount: 1,
+    owned: {}, ended: false, selected: null,
+    totalClicks: 0, totalEarned: 0, bigDigs: 0, goldenCaught: 0,
+    frenzyUntil: 0, frenzyClicks: 0, bestFrenzyClicks: 0,
+    runEarned: 0, bestPerSecond: 0, playSeconds: 0, seeds: 0, replants: 0, wins: 0, soundOn: true
+  };
+  const earnedAch = new Set();
+  let unseenAch = 0;
+  let unseenCos = 0;
+  const FRENZY_SECONDS = 15, FRENZY_MULT = 10;
+  function addPotatoes(n) { state.potatoes += n; state.totalEarned += n; state.runEarned += n; }
+  function frenzyActive() { return Date.now() < state.frenzyUntil; }
+  function frenzyMult() { return frenzyActive() ? FRENZY_MULT : 1; }
+
+  let audioCtx = null;
+  function audio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq, dur, type, vol, delay, slideTo) {
+    if (!state.soundOn) return;
+    const c = audio();
+    if (!c) return;
+    const t0 = c.currentTime + (delay || 0);
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.05, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    g.connect(c.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.03);
+  }
+  const sfx = {
+    click: () => tone(300 + Math.random() * 90, 0.08, 'triangle', 0.05),
+    big: () => { tone(170, 0.2, 'square', 0.04, 0, 70); tone(520, 0.12, 'triangle', 0.05, 0.02); },
+    buy: () => { tone(440, 0.09, 'triangle', 0.06); tone(660, 0.14, 'triangle', 0.06, 0.08); },
+    equip: () => tone(620, 0.07, 'square', 0.03),
+    ach: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'sine', 0.06, i * 0.09)),
+    goldenAppear: () => { tone(880, 0.12, 'sine', 0.04); tone(1320, 0.2, 'sine', 0.04, 0.1); },
+    golden: () => { tone(300, 0.45, 'sawtooth', 0.04, 0, 1500); tone(1760, 0.3, 'sine', 0.04, 0.2); },
+    frenzyEnd: () => tone(520, 0.3, 'triangle', 0.04, 0, 180),
+    win: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, 'triangle', 0.06, i * 0.14)),
+    replant: () => [262, 330, 392, 523].forEach((f, i) => tone(f, 0.35, 'sine', 0.06, i * 0.1))
+  };
+
+  const ENDING_COST = 30000000000000;
+  const upgradeDefs = [];
+  function nice(n) {
+    if (n < 100) return Math.round(n);
+    const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
+    return Math.round(n / p) * p;
+  }
+  function describe(type, power) {
+    switch (type) {
+      case 'click': return '+' + formatNum(power) + ' per click';
+      case 'auto': return '+' + formatNum(power) + ' per second';
+      case 'mult': return 'Everything you make goes up ' + Math.round((power - 1) * 100) + '%';
+      case 'crit': return '+' + Math.round(power * 100) + '% chance a click pays 5x';
+      case 'goldfreq': return 'Golden potatoes turn up ' + Math.round((1 / power - 1) * 100) + '% sooner';
+      case 'goldbonus': return 'Golden frenzies last ' + power + ' second' + (power === 1 ? '' : 's') + ' longer';
+      case 'discount': return 'Every upgrade costs ' + Math.round((1 - power) * 100) + '% less (except the last one)';
+      case 'clickps': return 'Every click also gives you ' + Math.round(power * 100) + '% of what you make per second';
+      default: return '';
+    }
+  }
+  function t(id, icon, name, cost, gx, gy, req, type, power, flavor, desc) {
+    const def = { id, icon, name, cost, gx, gy, req, type, power, flavor: flavor || '', desc: desc || describe(type, power), ending: type === 'ending' };
+    upgradeDefs.push(def);
+    return def;
+  }
+  function arm(start, coords, items, firstCost, lastCost) {
+    const n = items.length;
+    const ratio = Math.pow(lastCost / firstCost, 1 / (n - 1));
+    let prev = start;
+    return items.map((it, i) => {
+      const power = typeof it[4] === 'function' ? it[4](i, ratio) : it[4];
+      prev = t(it[0], it[1], it[2], nice(firstCost * Math.pow(ratio, i)), coords[i][0], coords[i][1], [prev.id], it[3], power, it[5]);
+      return prev;
+    });
+  }
+  function spur(anchor, dx, items) {
+    let prev = anchor;
+    items.forEach((it, i) => {
+      const k = i + 1;
+      const power = typeof it[4] === 'function' ? it[4](anchor, k) : it[4];
+      prev = t(it[0], it[1], it[2], nice(anchor.cost * Math.pow(1.5, k)), anchor.gx + dx * k, anchor.gy, [prev.id], it[3], power, it[5]);
+    });
+  }
+  const mirror = list => list.map(c => [-c[0], c[1]]);
+  const up = (x, from, to) => { const a = []; for (let y = from; y >= to; y--) a.push([x, y]); return a; };
+  const diag = (n, dx) => { const a = []; for (let i = 1; i <= n; i++) a.push([dx * i, -i]); return a; };
+  const at = (list, gx, gy) => list.find(d => d.gx === gx && d.gy === gy);
+
+  const root = t('shovel', '⛏️', 'Dad\u2019s Old Shovel', 10, 0, 0, [], 'click', 1, 'Rusty, but it still digs.');
+
+  const HC = [[-1, 0], [-2, 0], [-3, 0], [-4, -1], [-5, -2], [-6, -3], [-7, -4], [-8, -5], [-9, -6], [-10, -7]].concat(up(-10, -8, -16));
+  const FC = diag(5, -1).concat(up(-5, -6, -16));
+  const SC = mirror(FC), LC = mirror(HC), CC = up(0, -1, -16);
+
+  const cp = (i, r) => nice(2 * Math.pow(r / 1.08, i));
+  const ap = (i, r) => nice(Math.pow(r / 1.04, i));
+  const mp = i => Math.round((1.1 + 0.03 * i) * 100) / 100;
+
+  const hands = arm(root, HC, [
+    ['finger','👆','Poking Finger','click',cp,'You\u2019ve been doing it wrong this whole time.'],
+    ['peeler','🔪','Grandma\u2019s Peeler','click',cp,'The good one, with the wooden handle.'],
+    ['gloves','🧤','Work Gloves','click',cp,'Stiff with dirt. Somehow better for it.'],
+    ['cannon','💥','Spud Gun','click',cp,'Mostly for fun. Technically it digs, too.'],
+    ['goldtouch','✨','Gold-Plated Spade','click',cp,'Overkill, and you love it.'],
+    ['chopper','🪓','Hatchet','click',cp,'For the stubborn ones.'],
+    ['geargloves','⚙️','Hydraulic Gloves','click',cp,'Built them in the garage. They only squeak a little.'],
+    ['orbital','🛰️','Sky Cannon','click',cp,'It\u2019s a satellite. You\u2019re not sure who launched it.'],
+    ['meteor','☄️','Meteor','click',cp,'Free digging. The neighbors are upset.'],
+    ['cosmictap','🌌','One Giant Click','click',cp,'Everyone felt that one.'],
+    ['backhoe','🏗️','Backhoe','click',cp,'Rented. Never returned.'],
+    ['dynamite','💣','Dynamite','click',cp,'Fast, loud, and not covered by insurance.'],
+    ['fireworks','🎇','Fireworks','click',cp,'Technically digging. Mostly sparkles.'],
+    ['lightningrod','⚡','Lightning Rod','click',cp,'Free power. Very free.'],
+    ['volcano','🌋','Volcano Plow','click',cp,'You asked the volcano nicely.'],
+    ['saucer','🛸','Flying Saucer Plow','click',cp,'They said it was just a crop circle.'],
+    ['moondrill','🌑','Moon Drill','click',cp,'Drills into the moon. For reasons.'],
+    ['comettail','💫','Comet Tail','click',cp,'A very long one.'],
+    ['bigbang','🎆','Big Bang','click',cp,'You clicked so hard it started a universe.']
+  ], 40, 4e9);
+
+  const farm = arm(root, FC, [
+    ['farmhand','👨‍🌾','Hired Hand','auto',ap,'Works for potatoes. Mostly.'],
+    ['watering','💧','Watering Can','auto',ap,'Dented and leaky. Still works.'],
+    ['tractor','🚜','Old Tractor','auto',ap,'Starts on the third try.'],
+    ['factory','🏭','Packing Plant','auto',ap,'Sorts them by size. Nobody asked.'],
+    ['cloning','🧫','Cloning Vat','auto',ap,'Don\u2019t ask which potato was the original.'],
+    ['harvester','🌾','Combine','auto',ap,'Loud. Wonderful.'],
+    ['moonbase','🌙','Moon Patch','auto',ap,'Low gravity makes them fluffy.'],
+    ['mars','🪐','Mars Field','auto',ap,'Red dirt, red potatoes. Tastes the same.'],
+    ['dyson','☀️','Sun Wrapper','auto',ap,'You\u2019ve covered the sun. The potatoes love it.'],
+    ['galaxy','🌠','Potato Galaxy','auto',ap,'A whole galaxy of fields. Somebody has to water them.'],
+    ['nightshift','👷','Night Shift','auto',ap,'The potatoes grow in the dark, too.'],
+    ['robots','🦾','Robot Crew','auto',ap,'They never ask for a raise.'],
+    ['rocketfarm','🚀','Rocket Farm','auto',ap,'Lifts off at dawn.'],
+    ['roots','🕸️','Root Network','auto',ap,'Roots all the way down.'],
+    ['potatoforest','🌳','Potato Forest','auto',ap,'Potatoes shouldn\u2019t grow on trees. Yours do.'],
+    ['planet','🌎','Whole Planet','auto',ap,'Every acre is potatoes.']
+  ], 60, 6e9);
+
+  const science = arm(root, SC, [
+    ['soil','🧪','Dirt Test','mult',mp,'Turns out it\u2019s mostly dirt.'],
+    ['fertilizer','🌱','Manure','mult',mp,'Smells awful. Works great.'],
+    ['rotation','🔄','Crop Rotation','mult',mp,'Apparently you can\u2019t plant potatoes in the same spot forever.'],
+    ['genetics','🧬','Better Seed Potatoes','mult',mp,'You keep picking the best ones.'],
+    ['quantum','⚛️','Weird Science','mult',mp,'You read half a paper. It seems to work.'],
+    ['nano','🦠','Friendly Microbes','mult',mp,'They eat the bad stuff. Mostly.'],
+    ['singularity','🕳️','Hole in the Ground','mult',mp,'A very deep hole. Potatoes go in, more come out.'],
+    ['timewarp','⏳','Faster Seasons','mult',mp,'Spring keeps coming back around.'],
+    ['multiverse','🌐','The Other Farm','mult',mp,'Your counterpart next door is doing great.'],
+    ['infinite','♾️','Never-Ending Harvest','mult',mp,'You stopped counting a while ago.'],
+    ['talking','🗣️','Talking to Plants','mult',mp,'They answer. Politely.'],
+    ['rootmagnet','🧲','Root Magnet','mult',mp,'Pulls potatoes up from way down.'],
+    ['genius','🧠','Potato Genius','mult',mp,'The smartest root vegetable around.'],
+    ['pocket','🧿','Pocket Dimension','mult',mp,'Extra fields. They fit in your pocket.'],
+    ['perfectsoil','🏺','Perfect Soil','mult',mp,'Sifted twice. By hand.'],
+    ['theory','📜','Potato Theory','mult',mp,'Nobody else understands it.']
+  ], 100, 1e10);
+
+  const luck = arm(root, LC, [
+    ['clover','🍀','Lucky Clover','crit',0.05,'Found it by the fence.'],
+    ['sharpeye','👁️','Good Eyes','goldfreq',0.8,'You can spot the shiny ones from across the field.'],
+    ['haggler','🤝','Haggling','discount',0.9,'You always ask for a discount. It works about half the time.'],
+    ['heavy','🔨','Heavy Swing','crit',0.10,'Put your back into it.'],
+    ['harvest','🌟','Golden Season','goldbonus',5,'A good year for the shiny ones.'],
+    ['streak','🎯','Hot Streak','crit',0.05,'Don\u2019t think about it. Don\u2019t jinx it.'],
+    ['treasure','🗺️','Old Map','goldfreq',0.8,'Marks an X in a field you already own. Weird.'],
+    ['bargain','🏷️','Clearance Rack','discount',0.92,'Everything\u2019s marked down at the feed store.'],
+    ['moneybags','💰','Fat Wallet','goldbonus',5,'The shiny ones hang around longer when you look rich.'],
+    ['jackpot','🎰','Jackpot','crit',0.10,'Three potatoes in a row.'],
+    ['rabbitfoot','🐇','Rabbit\u2019s Foot','crit',0.03,'Not so lucky for the rabbit.'],
+    ['socks','🧦','Lucky Socks','goldfreq',0.95,'Never washed. Never will be.'],
+    ['loyalty','💳','Loyalty Card','discount',0.97,'Every ninth potato is free.'],
+    ['birthday','🎂','Birthday Wish','goldbonus',1,'You wished quietly.'],
+    ['wishbone','🦴','Wishbone','crit',0.03,'You got the bigger half.'],
+    ['shootingstar','⭐','Shooting Star','goldfreq',0.95,'Make it quick.'],
+    ['giftcard','🎁','Gift Card','discount',0.97,'From an aunt. Always the right amount.'],
+    ['cloverfield','☘️','Field of Clovers','goldbonus',1,'Eight hours of looking.'],
+    ['luckyseven','7️⃣','Lucky Number','crit',0.04,'It\u2019s seven. It\u2019s always seven.']
+  ], 120, 8e9);
+
+  const tradeItems = [
+    ['stall','🏪','Roadside Stand','clickps',0.02,'Hand-painted sign. Honesty box.'],
+    ['coupons','🎫','Coupon Book','discount',0.95,'Clipped from the Sunday paper.'],
+    ['farmersmkt','🧺','Farmers Market','clickps',0.03,'Saturday mornings. Everyone knows your name.'],
+    ['shipping','🚚','Delivery Truck','mult',1.15,'Finally, someone else drives.'],
+    ['fries','🍟','Fry Stand','clickps',0.05,'The salt is where the money is.'],
+    ['wholesale','🏬','Bulk Order','discount',0.93,'Your garage is full of it.'],
+    ['corp','🏢','The Co-op','clickps',0.08,'Farmers pooling their potatoes. Surprisingly civil.'],
+    ['export','🚢','Cargo Ship','mult',1.3,'Your potatoes have seen more countries than you.'],
+    ['brand','🌍','Name on the Bag','clickps',0.12,'People ask for yours by name.'],
+    ['exchange','💹','Futures Market','mult',1.5,'Somebody is betting on next year\u2019s potatoes. It\u2019s you.'],
+    ['grocery','🛍️','Grocery Chain','clickps',0.04,'Your spuds get their own shelf.'],
+    ['receipts','🧾','Receipt Roll','discount',0.97,'You kept every single one.'],
+    ['drivethru','🚗','Drive-Through','clickps',0.04,'Would you like fries with that? Yes.'],
+    ['bank','🏦','Potato Bank','mult',1.6,'Your potatoes earn interest.'],
+    ['franchise','🍔','Franchise','clickps',0.05,'Every town has one now.'],
+    ['hedge','💼','Hedge Fund','mult',1.8,'Your suits are very confident.']
+  ];
+  const trade = arm(root, CC, tradeItems, 150, 1.2e10);
+
+  const sp = (a, k) => nice(a.power * 0.45 * k);
+  const L = (list, y) => at(list, list[0].gx > 0 ? list[0].gx : list[0].gx, y);
+  const lane = (list, gx, gy) => at(list, gx, gy);
+
+  spur(lane(hands, -10, -8), -1, [['spade','🥄','Hand Trowel','click',sp,'Small, but it digs.'], ['fork','🍴','Garden Fork','click',sp,'Four prongs of opinion.'], ['hoe','⚒️','Old Hoe','click',sp,'Handed down. Nobody remembers which generation.'], ['stone','🪨','Sharpening Stone','click',sp,'Sharp enough to shave with.']]);
+  spur(lane(hands, -10, -12), -1, [['barrow','🛒','Wheelbarrow','click',sp,'One wobbly wheel.'], ['pitchfork','🔱','Pitchfork','click',sp,'Very dramatic.'], ['rake','🧹','Wide Rake','click',sp,'Gets everything in one pass.'], ['toolbelt','👝','Tool Belt','click',sp,'Everything within reach.']]);
+  spur(lane(hands, -10, -16), -1, [['wrench','🔧','Monkey Wrench','click',sp,'Fixes the shovel. Sometimes.'], ['toolbox','🧰','Toolbox','click',sp,'Half the tools are missing.'], ['toolkit','🛠️','Full Workshop','click',sp,'Dad\u2019s garage, finally cleaned out.'], ['machineshop','🔩','Machine Shop','click',sp,'Dad would be proud.']]);
+  spur(lane(hands, -10, -10), 1, [['callus','🧴','Callus Cream','click',sp,'Hands have to last.'], ['brace','🧷','Wrist Brace','click',sp,'For the long days.'], ['gym','🏋️','Gym Membership','click',sp,'You never skip arm day.']]);
+  spur(lane(hands, -10, -14), 1, [['energy','🥤','Energy Drink','click',sp,'Your hands vibrate a little.'], ['shake','🥛','Protein Shake','click',sp,'Chalky, but it works.'], ['trainer','🏃','Personal Trainer','click',sp,'Shouts a lot. Helpful.']]);
+
+  spur(lane(farm, -5, -8), -1, [['dog','🐕','Farm Dog','auto',sp,'Chases off the crows. Mostly.'], ['cat','🐈','Barn Cat','auto',sp,'Keeps the mice honest.'], ['owl','🦉','Barn Owl','auto',sp,'Hoots at midnight. Eats the mice.']]);
+  spur(lane(farm, -5, -12), -1, [['coop','🐔','Chicken Coop','auto',sp,'They eat the bugs.'], ['cow','🐄','Old Cow','auto',sp,'Contributes manure and opinions.'], ['goats','🐐','Goat Herd','auto',sp,'They eat everything but the potatoes. Somehow.']]);
+  spur(lane(farm, -5, -16), -1, [['greenhouse','🏡','Greenhouse','auto',sp,'Potatoes in winter feels like cheating.'], ['windmill','🌀','Windmill','auto',sp,'Pumps water all day, unbothered.'], ['watertower','🗼','Water Tower','auto',sp,'Keeps the whole farm watered.']]);
+  spur(lane(farm, -5, -6), 1, [['scarecrow','🎃','Scarecrow','auto',sp,'Not very scary. The crows know.'], ['compost','🍂','Compost Heap','auto',sp,'A mountain of good stuff.'], ['bees','🐝','Beehive','auto',sp,'Nobody asked for bees. They helped anyway.']]);
+  spur(lane(farm, -5, -10), 1, [['bucket','🪣','Bucket Brigade','auto',sp,'Passed hand to hand.'], ['sprinkler','🚿','Sprinklers','auto',sp,'Tsk tsk tsk, all morning.'], ['canal','🌊','Irrigation Canal','auto',sp,'You dug it yourself.']]);
+  spur(lane(farm, -5, -14), 1, [['barn','🏚️','Big Red Barn','auto',sp,'Holds everything.'], ['tallsilo','🛢️','Tall Silo','auto',sp,'Stores more than grain.'], ['almanac','📖','Farmer\u2019s Almanac','auto',sp,'Predicted rain. It rained.']]);
+
+  spur(lane(science, 5, -8), -1, [['probe','🔬','Soil Probe','mult',1.03,'A long stick you poke in the ground.'], ['labcoat','🥼','Lab Coat','mult',1.04,'You\u2019re a scientist now. It\u2019s official.'], ['extinguisher','🧯','Fire Extinguisher','mult',1.05,'Used twice already.']]);
+  spur(lane(science, 5, -12), -1, [['scope','🔭','Telescope','mult',1.03,'For watching the clouds.'], ['station','🌦️','Rain Gauge','mult',1.04,'You know exactly how wet it\u2019s been.'], ['barometer','🌡️','Barometer','mult',1.05,'It says: damp.']]);
+  spur(lane(science, 5, -16), -1, [['computer','💻','Spreadsheet','mult',1.04,'Columns. So many columns.'], ['robot','🤖','Robot Helper','mult',1.05,'Doesn\u2019t complain. Doesn\u2019t eat.'], ['qcomputer','🖥️','Giant Computer','mult',1.06,'Nobody knows what it\u2019s calculating.']]);
+  spur(lane(science, 5, -6), 1, [['tubes','⚗️','Test Tubes','mult',1.03,'Bubbling. Probably safe.'], ['magnifier','🔍','Magnifying Glass','mult',1.04,'For inspecting the potato eyes.'], ['notebook','📓','Lab Notebook','mult',1.05,'Illegible, but thorough.']]);
+  spur(lane(science, 5, -10), 1, [['lamp','💡','Heat Lamp','mult',1.03,'Pretends to be a friendly sun.'], ['growlights','🔦','Grow Lights','mult',1.04,'Midnight harvests.'], ['hydro','🫧','Hydroponics','mult',1.05,'Potatoes floating in water. Weird.']]);
+  spur(lane(science, 5, -14), 1, [['coldstorage','🧊','Cold Storage','mult',1.04,'Keeps them fresh for months.'], ['seedvault','🔐','Seed Vault','mult',1.05,'Insurance against everything.'], ['museum','🏛️','Potato Museum','mult',1.06,'You gave a tour once.']]);
+
+  spur(lane(luck, 10, -8), -1, [['coin','🪙','Lucky Penny','crit',0.03,'Heads, every time.'], ['well','⛲','Wishing Well','goldfreq',0.9,'You wished for more potatoes. Obviously.'], ['rainbow','🌈','Rainbow','goldbonus',3,'The pot at the end is, technically, a pot of potatoes.']]);
+  spur(lane(luck, 10, -12), -1, [['horseshoe','🐴','Horseshoe','crit',0.03,'Nailed over the barn door.'], ['cookie','🥠','Fortune Cookie','discount',0.95,'\u201CYou will plant potatoes.\u201D Gee, thanks.'], ['crystal','🔮','Fortune Teller','goldfreq',0.85,'Says the harvest will be good. Always says that.']]);
+  spur(lane(luck, 10, -10), 1, [['blackcat','🐈‍⬛','Black Cat','crit',0.02,'Crossed your path. Twice.'], ['ladder','🪜','Ladder','goldfreq',0.95,'Walked under it on purpose.'], ['mirror','🪞','Broken Mirror','discount',0.97,'Seven years of good luck. Reverse psychology.'], ['salt','🧂','Pinch of Salt','crit',0.02,'Over the shoulder. Hit the neighbor.']]);
+  spur(lane(luck, 10, -14), 1, [['knock','🪵','Knock on Wood','goldbonus',1,'Twice, to be safe.'], ['aces','♠️','Ace Up the Sleeve','crit',0.02,'Don\u2019t ask where it came from.'], ['champagne','🍾','Champagne','goldfreq',0.95,'Save it for a win.'], ['trophy','🏆','Trophy','goldbonus',1,'You earned it. Twice.']]);
+  spur(lane(luck, 10, -16), 1, [['dice','🎲','Lucky Dice','crit',0.04,'Fuzzy. They came with the truck.'], ['wildcard','🃏','Wild Card','goldbonus',3,'Nobody knows what it does, but it\u2019s in your favor.'], ['lottery','🎟️','Scratch Ticket','discount',0.95,'Won two bucks. Spent it on another one.']]);
+
+  spur(lane(trade, 0, -8), -1, [['cashbox','💵','Cash Box','clickps',0.01,'Always a little short.'], ['pricetags','🔖','Price Tags','discount',0.98,'Handwritten. Crooked.'], ['scale','⚖️','Scale','mult',1.03,'A thumb on it. Just a little.']]);
+  spur(lane(trade, 0, -12), -1, [['samples','🍘','Free Samples','clickps',0.01,'Everyone takes two.'], ['cards','📇','Business Cards','discount',0.98,'Embossed.'], ['billboard','🪧','Billboard','mult',1.04,'Eat potatoes. Signed, you.']]);
+  spur(lane(trade, 0, -16), -1, [['register','🧮','Cash Register','clickps',0.02,'Ding. Ding. Ding.'], ['accountant','👔','Accountant','discount',0.97,'Finds deductions in the dirt.'], ['loophole','📑','Tax Loophole','mult',1.05,'Perfectly legal. Mostly.']]);
+  spur(lane(trade, 0, -6), 1, [['piggy','🐷','Piggy Bank','clickps',0.01,'Shake it. Hear that?'], ['bags','👜','Shopping Bags','discount',0.98,'Reusable. Sort of.'], ['giftbasket','🎀','Gift Basket','mult',1.03,'With a bow.']]);
+  spur(lane(trade, 0, -10), 1, [['radio','📻','Radio Ad','clickps',0.01,'The jingle is stuck in everyone\u2019s head.'], ['tv','📺','TV Spot','discount',0.98,'Thirty seconds of fame.'], ['mascot','🧸','Mascot','mult',1.04,'A person in a potato suit.']]);
+  spur(lane(trade, 0, -14), 1, [['app','📱','Delivery App','clickps',0.02,'Five stars. Mostly.'], ['robots2','🦿','Warehouse Robots','discount',0.97,'They don\u2019t take lunch.'], ['onlinestore','📦','Online Store','mult',1.05,'Next-day delivery. Literally.']]);
+
+  t('greatpotato', '👑', 'The Great Potato', ENDING_COST, 0, -20,
+    [hands[hands.length - 1].id, farm[farm.length - 1].id, science[science.length - 1].id, luck[luck.length - 1].id, trade[trade.length - 1].id], 'ending', 0,
+    'The biggest potato anyone has ever seen. Maybe it\u2019s time to eat it.', 'Buy it and you win.');
+
+  const upgradeById = {};
+  upgradeDefs.forEach(d => upgradeById[d.id] = d);
+
+  const el = id => document.getElementById(id);
+  const countEl = el('potato-count');
+  const rateEl = el('rate-display');
+  const btn = el('potato-btn');
+  const drawer = el('drawer');
+  const handle = el('drawer-handle');
+  const slateEl = el('slate');
+  const frenzyLine = el('frenzy-line');
+  const notesEl = el('notes');
+  const badge = el('ready-badge');
+  const mapView = el('map-view');
+  const mapEl = el('map');
+  const counterNum = el('counter-num');
+  const footName = el('foot-name');
+  const footEffect = el('foot-effect');
+  const footFlavor = el('foot-flavor');
+  const footReq = el('foot-req');
+  const researchBtn = el('research-btn');
+
+  function formatNum(n) {
+    if (n < 1000) return Math.floor(n).toString();
+    const units = ['K','M','B','T','Qa','Qi'];
+    let unitIndex = -1, val = n;
+    while (val >= 1000 && unitIndex < units.length - 1) { val /= 1000; unitIndex++; }
+    return val.toFixed(1) + units[unitIndex];
+  }
+  function spaced(n) {
+    if (n >= 1e15) return formatNum(n);
+    return Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+
+  function effectText(def) { return def.desc || ''; }
+  const EFF_GLYPH = { click: '+', auto: '^', mult: 'x', crit: '%', goldfreq: '^', goldbonus: 'x', discount: '%', clickps: '$', ending: '*' };
+
+  function costOf(def) { return def.ending ? def.cost : Math.ceil(def.cost * state.discount); }
+  function isUnlocked(def) { return def.req.every(r => state.owned[r]); }
+
+  function recalc() {
+    let click = 1, auto = 0, mult = 1, crit = 0, gd = 1, gb = 0, disc = 1, cps = 0;
+    upgradeDefs.forEach(d => {
+      if (!state.owned[d.id]) return;
+      switch (d.type) {
+        case 'clickps': cps += d.power; break;
+        case 'click': click += d.power; break;
+        case 'auto': auto += d.power; break;
+        case 'mult': mult *= d.power; break;
+        case 'crit': crit += d.power; break;
+        case 'goldfreq': gd *= d.power; break;
+        case 'goldbonus': gb += d.power; break;
+        case 'discount': disc *= d.power; break;
+      }
+    });
+    mult *= 1 + 0.01 * earnedAch.size;
+    mult *= 1 + 0.1 * state.seeds;
+    state.mult = mult; state.crit = Math.min(crit, 0.8); state.goldDelay = Math.max(gd, 0.4); state.goldBonus = Math.min(gb, 30); state.discount = Math.max(disc, 0.5);
+    state.perClick = (click + auto * cps) * mult;
+    state.perSecond = auto * mult;
+    state.bestPerSecond = Math.max(state.bestPerSecond, state.perSecond);
+  }
+
+  const S = 100, PAD = 90, HALF = 32;
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  upgradeDefs.forEach(d => {
+    minX = Math.min(minX, d.gx); maxX = Math.max(maxX, d.gx);
+    minY = Math.min(minY, d.gy); maxY = Math.max(maxY, d.gy);
+  });
+  const mapW = PAD * 2 + (maxX - minX) * S;
+  const mapH = PAD * 2 + (maxY - minY) * S;
+  const cx = gx => PAD + (gx - minX) * S;
+  const cy = gy => PAD + (gy - minY) * S;
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const nodeEls = {}, imgEls = {}, lines = [];
+
+  function buildMap() {
+    mapEl.style.width = mapW + 'px';
+    mapEl.style.height = mapH + 'px';
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'map-lines');
+    svg.setAttribute('width', mapW);
+    svg.setAttribute('height', mapH);
+    mapEl.appendChild(svg);
+
+    upgradeDefs.forEach(def => {
+      def.req.forEach(rid => {
+        const a = upgradeById[rid];
+        const ln = document.createElementNS(SVG_NS, 'line');
+        ln.setAttribute('x1', cx(a.gx)); ln.setAttribute('y1', cy(a.gy));
+        ln.setAttribute('x2', cx(def.gx)); ln.setAttribute('y2', cy(def.gy));
+        svg.appendChild(ln);
+        lines.push({ ln, from: rid, to: def.id });
+      });
+    });
+
+    upgradeDefs.forEach(def => {
+      const n = document.createElement('div');
+      n.className = 'node';
+      n.tabIndex = 0;
+      n.setAttribute('role', 'button');
+      n.setAttribute('aria-label', def.name);
+      n.style.left = (cx(def.gx) - HALF - 4) + 'px';
+      n.style.top = (cy(def.gy) - HALF - 4) + 'px';
+      n.innerHTML = '<span class="sprite"></span><span class="eff">' + (EFF_GLYPH[def.type] || '+') + '</span>';
+      n.addEventListener('click', () => { if (!panMoved) select(def.id); });
+      n.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); select(def.id); }
+      });
+      mapEl.appendChild(n);
+      nodeEls[def.id] = n;
+      imgEls[def.id] = n.querySelector('.sprite');
+    });
+  }
+
+  const view = { x: 0, y: 0 };
+  let panMoved = false, drag = null;
+
+  function applyView() {
+    const vw = mapView.clientWidth, vh = mapView.clientHeight, m = 60;
+    if (!vw || !vh) return;
+    if (mapW + m * 2 <= vw) view.x = (vw - mapW) / 2;
+    else view.x = Math.max(Math.min(view.x, m), vw - mapW - m);
+    if (mapH + m * 2 <= vh) view.y = (vh - mapH) / 2;
+    else view.y = Math.max(Math.min(view.y, m), vh - mapH - m);
+    mapEl.style.transform = `translate(${view.x}px, ${view.y}px)`;
+  }
+  function centerOnRoot() {
+    view.x = mapView.clientWidth / 2 - cx(0);
+    view.y = mapView.clientHeight * 0.78 - cy(0);
+    applyView();
+  }
+
+  mapView.addEventListener('pointerdown', e => {
+    if (e.target.closest('.map-btns')) return;
+    drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+    panMoved = false;
+  });
+  window.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!panMoved && Math.hypot(dx, dy) > 5) { panMoved = true; mapView.classList.add('dragging'); }
+    if (panMoved) { view.x = drag.vx + dx; view.y = drag.vy + dy; applyView(); }
+  });
+  function endDrag() {
+    if (!drag) return;
+    drag = null;
+    mapView.classList.remove('dragging');
+    setTimeout(() => { panMoved = false; }, 0);
+  }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+  mapView.addEventListener('wheel', e => {
+    e.preventDefault();
+    view.x -= e.deltaX; view.y -= e.deltaY;
+    applyView();
+  }, { passive: false });
+  el('home-btn').addEventListener('click', centerOnRoot);
+
+  function updateTree() {
+    let ready = 0;
+    upgradeDefs.forEach(def => {
+      const isOwned = !!state.owned[def.id];
+      const unlocked = isUnlocked(def);
+      const afford = state.potatoes >= costOf(def);
+      if (!isOwned && unlocked && afford) ready++;
+      nodeEls[def.id].className = 'node'
+        + (def.ending ? ' final' : '')
+        + (isOwned ? ' owned' : unlocked ? (afford ? ' ready' : ' poor') : ' locked')
+        + (state.selected === def.id ? ' selected' : '');
+      const want = (isOwned || unlocked) ? def.icon : '🔒';
+      if (imgEls[def.id].textContent !== want) imgEls[def.id].textContent = want;
+    });
+    lines.forEach(l => {
+      const child = upgradeById[l.to];
+      const cls = state.owned[l.to] ? 'done' : (isUnlocked(child) ? 'open' : '');
+      l.ln.setAttribute('class', cls);
+      l.ln.style.stroke = '';
+    });
+    badge.textContent = ready;
+    badge.classList.toggle('hidden', ready === 0);
+    updateDetail();
+  }
+
+  function select(id) {
+    state.selected = id;
+    updateTree();
+  }
+
+  function updateDetail() {
+    const def = state.selected && upgradeById[state.selected];
+    if (!def) {
+      footName.textContent = 'Tap a square';
+      footFlavor.textContent = '';
+      footEffect.textContent = 'Drag the map around and tap anything that looks interesting.';
+      footReq.textContent = '';
+      researchBtn.disabled = true;
+      researchBtn.textContent = 'Buy';
+      return;
+    }
+    footName.textContent = def.icon + ' ' + def.name;
+    footFlavor.textContent = def.flavor;
+    footEffect.textContent = effectText(def);
+    const cost = costOf(def);
+    if (state.owned[def.id]) {
+      footReq.textContent = 'You\u2019ve already got this one.';
+      researchBtn.disabled = true; researchBtn.textContent = 'Got it';
+    } else if (!isUnlocked(def)) {
+      const missing = def.req.filter(r => !state.owned[r]).map(r => upgradeById[r].name);
+      footReq.textContent = 'Get these first: ' + missing.join(', ');
+      researchBtn.disabled = true; researchBtn.textContent = 'Locked';
+    } else if (state.potatoes < cost) {
+      footReq.textContent = 'You\u2019re ' + formatNum(cost - state.potatoes) + ' potatoes short.';
+      researchBtn.disabled = true; researchBtn.textContent = 'Not yet';
+    } else {
+      footReq.textContent = 'You can afford this one.';
+      researchBtn.disabled = false; researchBtn.textContent = 'Buy \u00b7 ' + formatNum(cost);
+    }
+  }
+
+  function buyUpgrade(def) {
+    if (state.owned[def.id] || !isUnlocked(def) || state.potatoes < costOf(def)) return;
+    state.potatoes -= costOf(def);
+    state.owned[def.id] = true;
+    recalc();
+    render();
+    if (def.ending) { state.wins++; showEnding(); } else sfx.buy();
+    saveGame();
+  }
+  researchBtn.addEventListener('click', () => {
+    if (state.selected) buyUpgrade(upgradeById[state.selected]);
+  });
+
+  function updateFrenzyUI() {
+    const active = frenzyActive();
+    slateEl.classList.toggle('frenzy', active);
+    frenzyLine.textContent = active
+      ? '✨ Golden frenzy! x' + FRENZY_MULT + ' for ' + Math.ceil((state.frenzyUntil - Date.now()) / 1000) + 's'
+      : '';
+  }
+
+  function render() {
+    if (checkAchievements()) recalc();
+    const fm = frenzyMult();
+    countEl.textContent = formatNum(state.potatoes);
+    counterNum.textContent = spaced(state.potatoes);
+    let rate = `+${formatNum(state.perClick * fm)} per click · +${formatNum(state.perSecond * fm)} per second`;
+    if (state.mult > 1) rate += ` · x${state.mult.toFixed(2)} bonus`;
+    if (state.crit > 0) rate += ` · ${Math.round(state.crit * 100)}% big digs`;
+    rateEl.textContent = rate;
+    updateFrenzyUI();
+    updateTree();
+  }
+
+  let centered = false;
+  let currentView = 'upgrades';
+  const views = {
+    upgrades: { panel: el('panel-upgrades'), handle: handle },
+    ach: { panel: el('panel-ach'), handle: el('ach-handle') },
+    ward: { panel: el('panel-ward'), handle: el('ward-handle') },
+    stats: { panel: el('panel-stats'), handle: el('stats-handle') }
+  };
+  const achBadge = el('ach-badge');
+  const wardBadge = el('ward-badge');
+  function drawerOpen() { return drawer.classList.contains('open'); }
+  function updateHandles() {
+    const open = drawerOpen();
+    Object.keys(views).forEach(name => {
+      const on = open && currentView === name;
+      views[name].handle.classList.toggle('active', on);
+      views[name].handle.setAttribute('aria-expanded', on ? 'true' : 'false');
+    });
+  }
+  function showView(name) {
+    currentView = name;
+    Object.keys(views).forEach(n => views[n].panel.classList.toggle('hidden', n !== name));
+    if (name === 'ach') { unseenAch = 0; updateAchBadge(); }
+    if (name === 'ward') { unseenCos = 0; updateWardBadge(); renderWardrobe(); }
+    if (name === 'stats') renderStats();
+  }
+  function setDrawer(open, view) {
+    if (view) showView(view);
+    drawer.classList.toggle('open', open);
+    document.body.classList.toggle('drawer-open', open);
+    updateHandles();
+    if (open && currentView === 'upgrades') {
+      requestAnimationFrame(() => { if (!centered) { centerOnRoot(); centered = true; } else applyView(); });
+    }
+  }
+  function toggleView(name) { setDrawer(!(drawerOpen() && currentView === name), name); }
+  Object.keys(views).forEach(name => views[name].handle.addEventListener('click', () => toggleView(name)));
+  el('close-btn').addEventListener('click', () => setDrawer(false));
+  el('ach-close').addEventListener('click', () => setDrawer(false));
+  el('ward-close').addEventListener('click', () => setDrawer(false));
+  el('stats-close').addEventListener('click', () => setDrawer(false));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') setDrawer(false); });
+  window.addEventListener('resize', applyView);
+
+  function notify(text, kind) {
+    const n = document.createElement('div');
+    n.className = 'note ' + (kind || '');
+    n.textContent = text;
+    notesEl.appendChild(n);
+    setTimeout(() => n.remove(), kind === 'ach' ? 4200 : 3200);
+  }
+
+  const mainIds = new Set();
+  [hands, farm, science, luck, trade].forEach(a => a.forEach(d => mainIds.add(d.id)));
+  const spurDefs = upgradeDefs.filter(d => !mainIds.has(d.id) && d.id !== 'shovel' && !d.ending);
+  const ownedCount = () => Object.keys(state.owned).length;
+  const armDone = a => a.every(d => state.owned[d.id]);
+
+  const achDefs = [];
+  function A(id, icon, name, desc, test) { achDefs.push({ id, icon, name, desc, test }); }
+
+  A('firstdig',   '🥔', 'First Dig',              'Click the potato once.',                    () => state.totalClicks >= 1);
+  A('blisters',   '✋', 'Blisters',               'Click 100 times.',                          () => state.totalClicks >= 100);
+  A('sorewrist',  '💪', 'Sore Wrist',             'Click 1,000 times.',                        () => state.totalClicks >= 1000);
+  A('job',        '🖱️', 'Is This a Job?',         'Click 10,000 times.',                       () => state.totalClicks >= 10000);
+
+  A('snack',      '🍽️', 'Snack Time',             'Dig up 100 potatoes, total.',               () => state.totalEarned >= 100);
+  A('fullsack',   '🎒', 'Full Sack',              'Dig up 1,000 potatoes, total.',             () => state.totalEarned >= 1000);
+  A('truckload',  '🚚', 'Truckload',              'Dig up 100,000 potatoes, total.',           () => state.totalEarned >= 1e5);
+  A('warehouse',  '🏭', 'Warehouse',              'Dig up a million potatoes, total.',         () => state.totalEarned >= 1e6);
+  A('toomany',    '🏔️', 'More Than Anyone Needs', 'Dig up 100 million potatoes, total.',      () => state.totalEarned >= 1e8);
+  A('billion',    '💸', 'Potato Billionaire',     'Dig up a billion potatoes, total.',         () => state.totalEarned >= 1e9);
+  A('counting',   '🌌', 'Who\u2019s Counting?',   'Dig up a trillion potatoes, total.',       () => state.totalEarned >= 1e12);
+
+  A('handsoff',   '🙌', 'Hands Off',              'Make 1 potato per second without clicking.',    () => state.perSecond >= 1);
+  A('itself',     '⚙️', 'Running Itself',         'Make 100 potatoes per second.',                 () => state.perSecond >= 100);
+  A('sleep',      '😴', 'Money While You Sleep',  'Make 10,000 potatoes per second.',              () => state.perSecond >= 10000);
+  A('silly',      '🤯', 'Getting Silly',          'Make a million potatoes per second.',           () => state.perSecond >= 1e6);
+  A('heavyhand',  '🔨', 'Heavy Hand',             'Get 1,000 potatoes from one click.',            () => state.perClick >= 1000);
+
+  A('firstbuy',   '🛒', 'First Purchase',         'Buy your first upgrade.',                      () => ownedCount() >= 1);
+  A('serious',    '📈', 'Getting Serious',        'Own 10 upgrades.',                             () => ownedCount() >= 10);
+  const HALFWAY = Math.floor(upgradeDefs.length / 2);
+  A('halfway',    '🧭', 'Halfway There',          'Own ' + HALFWAY + ' upgrades.',              () => ownedCount() >= HALFWAY);
+  A('everything', '🏆', 'Completionist',          'Own every single upgrade.',                    () => ownedCount() >= upgradeDefs.length);
+
+  A('armhands',   '🧤', 'Calloused',              'Finish the whole Hands arm.',               () => armDone(hands));
+  A('armfarm',    '🚜', 'Farm Boss',              'Finish the whole Farm arm.',                () => armDone(farm));
+  A('armsci',     '🧪', 'Mad Scientist',          'Finish the whole Science arm.',             () => armDone(science));
+  A('armluck',    '🍀', 'Lucky Duck',             'Finish the whole Luck arm.',                () => armDone(luck));
+  A('armtrade',   '🏪', 'Shopkeeper',             'Finish the whole Trade arm.',               () => armDone(trade));
+  A('side',       '🗺️', 'Side Quests',            'Finish every side branch.',                 () => armDone(spurDefs));
+
+  A('shiny',      '✨', 'Shiny!',                 'Catch a golden potato.',                    () => state.goldenCaught >= 1);
+  A('golddigger', '🪙', 'Gold Digger',            'Catch 10 golden potatoes.',                 () => state.goldenCaught >= 10);
+  A('goldrush',   '🌟', 'Gold Rush',              'Catch 25 golden potatoes.',                 () => state.goldenCaught >= 25);
+  A('frenzy',     '🔥', 'Frenzy Fingers',         'Click 40 times in one golden frenzy.',      () => state.bestFrenzyClicks >= 40);
+
+  A('bigdig',     '💥', 'Big Dig',                'Land a big dig (a click that pays 5x).',    () => state.bigDigs >= 1);
+  A('strongback', '🦾', 'Strong Back',            'Land 100 big digs.',                        () => state.bigDigs >= 100);
+
+  A('topspud',    '👑', 'Top Spud',               'Buy The Great Potato.',                     () => !!state.owned.greatpotato);
+
+  A('replant1',   '🌱', 'Second Harvest',         'Replant the farm for the first time.',      () => state.replants >= 1);
+  A('replant3',   '🌾', 'Seasoned Farmer',        'Replant the farm 3 times.',                 () => state.replants >= 3);
+  A('replant10',  '🕰️', 'Old Timer',              'Replant the farm 10 times.',                () => state.replants >= 10);
+
+  const achListEl = el('ach-list');
+  const achSub = el('ach-sub');
+  function renderAch() {
+    achListEl.innerHTML = '';
+    achDefs.forEach(a => {
+      const done = earnedAch.has(a.id);
+      const card = document.createElement('div');
+      card.className = 'ach-card ' + (done ? 'done' : 'locked');
+      card.innerHTML = '<div class="a-icon">' + (done ? a.icon : '🔒') + '</div><div><div class="a-name"></div><div class="a-desc"></div><div class="a-reward"></div></div>';
+      card.querySelector('.a-name').textContent = a.name;
+      card.querySelector('.a-desc').textContent = a.desc;
+      const prizes = cosmeticDefs.filter(c => c.ach === a.id).map(c => c.icon + ' ' + c.name);
+      card.querySelector('.a-reward').textContent = prizes.length ? (done ? 'Unlocked: ' : 'Unlocks: ') + prizes.join(', ') : '';
+      achListEl.appendChild(card);
+    });
+    achSub.textContent = earnedAch.size + ' of ' + achDefs.length + '. Each one adds 1% to everything you make.';
+  }
+  function updateAchBadge() {
+    achBadge.textContent = unseenAch;
+    achBadge.classList.toggle('hidden', unseenAch === 0);
+  }
+  function checkAchievements() {
+    let changed = false;
+    achDefs.forEach(a => {
+      if (!earnedAch.has(a.id) && a.test()) {
+        earnedAch.add(a.id);
+        changed = true;
+        if (!(drawerOpen() && currentView === 'ach')) unseenAch++;
+        notify('\u{1F3C6} ' + a.name + ': ' + a.desc, 'ach');
+        const prizes = cosmeticDefs.filter(c => c.ach === a.id);
+        if (prizes.length) {
+          notify('\u{1F3A8} New for your potato: ' + prizes.map(c => c.name).join(', '), 'ach');
+          if (!(drawerOpen() && currentView === 'ward')) unseenCos += prizes.length;
+        }
+      }
+    });
+    if (changed) { sfx.ach(); saveGame(); renderAch(); updateAchBadge(); updateWardBadge(); if (drawerOpen() && currentView === 'ward') renderWardrobe(); }
+    return changed;
+  }
+
+  const SLOTS = [
+    { id: 'hat',   label: 'Hat',          none: 'No hat',    noneIcon: '🚫' },
+    { id: 'face',  label: 'Face',         none: 'Bare face', noneIcon: '🚫' },
+    { id: 'skin',  label: 'Skin',         none: 'Plain',     noneIcon: '🥔' },
+    { id: 'ring',  label: 'Ring',         none: 'Classic',   noneIcon: '🔴' },
+    { id: 'spark', label: 'Click effect', none: 'None',      noneIcon: '🚫' }
+  ];
+  const cosmeticDefs = [];
+  function C(id, slot, name, icon, ach, extra) {
+    cosmeticDefs.push(Object.assign({ id, slot, name, icon, ach }, extra || {}));
+  }
+
+  C('sprout', 'hat', 'Little Sprout', '🌱', 'firstdig', { at: [53, 26, -13, 1.15], art: '<path d="M0 3 C0 -4 0 -8 1 -12" stroke="#3f8a2f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M1 -11 C-3 -22 -16 -22 -22 -16 C-17 -9 -7 -8 1 -11Z" fill="#6fc24f" stroke="#2f6b25" stroke-width="2" stroke-linejoin="round"/><path d="M1 -11 C5 -21 17 -23 23 -17 C18 -9 9 -8 1 -11Z" fill="#90bd76" stroke="#2f6b25" stroke-width="2" stroke-linejoin="round"/>' });
+  C('cap', 'hat', 'Ball Cap', '🧢', 'sorewrist', { at: [53, 26, -13, 1.15], art: '<path d="M-21 3 C-22 -17 -8 -22 2 -22 C14 -22 22 -14 21 3 Z" fill="#5681a9" stroke="#2f4764" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 2 C24 -1 34 2 38 6 C30 9 20 7 13 5 Z" fill="#436589" stroke="#2f4764" stroke-width="2.5" stroke-linejoin="round"/><circle cx="1" cy="-22" r="2.5" fill="#2f4764"/>' });
+  C('hardhat', 'hat', 'Hard Hat', '⛑️', 'job', { at: [53, 26, -13, 1.15], art: '<path d="M-24 4 C-25 -18 -10 -24 0 -24 C10 -24 25 -18 24 4 Z" fill="#cdb057" stroke="#736026" stroke-width="2.5" stroke-linejoin="round"/><rect x="-5" y="-24" width="10" height="26" fill="#b7953b" stroke="#736026" stroke-width="2"/><rect x="-29" y="1" width="58" height="6" rx="3" fill="#cdb057" stroke="#736026" stroke-width="2.5"/>' });
+  C('straw', 'hat', 'Straw Hat', '👒', 'fullsack', { at: [53, 26, -13, 1.15], art: '<ellipse cx="0" cy="3" rx="34" ry="8" fill="#d0b983" stroke="#846b3c" stroke-width="2.5"/><path d="M-17 3 C-18 -17 -8 -20 0 -20 C8 -20 18 -17 17 3 Z" fill="#dbca97" stroke="#846b3c" stroke-width="2.5" stroke-linejoin="round"/><path d="M-17.5 -3 L17.5 -3 L17.8 2 L-17.8 2Z" fill="#a25149" stroke="#69332c" stroke-width="1.5"/>' });
+  C('tophat', 'hat', 'Top Hat', '🎩', 'billion', { at: [53, 26, -13, 1.15], art: '<ellipse cx="0" cy="2" rx="28" ry="6" fill="#262626" stroke="#000" stroke-width="2"/><rect x="-16" y="-30" width="32" height="32" rx="2" fill="#2e2e2e" stroke="#000" stroke-width="2"/><rect x="-16" y="-9" width="32" height="8" fill="#8d4943"/><ellipse cx="0" cy="-30" rx="16" ry="4.5" fill="#3c3c3c" stroke="#000" stroke-width="2"/>' });
+  C('helmet', 'hat', 'Army Helmet', '🪖', 'armhands', { at: [53, 26, -13, 1.15], art: '<path d="M-24 5 C-26 -18 -10 -24 0 -24 C10 -24 26 -18 24 5 Z" fill="#6b7d3f" stroke="#323d1a" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="-11" cy="-12" rx="6" ry="3.5" fill="#4d5c2b"/><ellipse cx="9" cy="-15" rx="5" ry="3" fill="#4d5c2b"/><ellipse cx="14" cy="-5" rx="5" ry="2.8" fill="#8a9a58"/><path d="M-24 -1 C-10 -6 10 -6 24 -1" stroke="#323d1a" stroke-width="2" fill="none"/>' });
+  C('flower', 'hat', 'Flower Crown', '🌸', 'armfarm', { at: [53, 26, -13, 1.15], art: '<path d="M-24 4 Q0 -14 24 4" stroke="#4f9a3b" stroke-width="5" fill="none" stroke-linecap="round"/><g transform="translate(-20 1)"><circle r="5.5" fill="#e9a5ba" stroke="#b64a73" stroke-width="1.5"/><circle r="2.2" fill="#e0ce85"/></g><g transform="translate(-10 -4)"><circle r="5.5" fill="#ffffff" stroke="#b64a73" stroke-width="1.5"/><circle r="2.2" fill="#e0ce85"/></g><g transform="translate(0 -6)"><circle r="5.5" fill="#e9a5ba" stroke="#b64a73" stroke-width="1.5"/><circle r="2.2" fill="#e0ce85"/></g><g transform="translate(10 -4)"><circle r="5.5" fill="#ffffff" stroke="#b64a73" stroke-width="1.5"/><circle r="2.2" fill="#e0ce85"/></g><g transform="translate(20 1)"><circle r="5.5" fill="#e9a5ba" stroke="#b64a73" stroke-width="1.5"/><circle r="2.2" fill="#e0ce85"/></g>' });
+  C('grad', 'hat', 'Graduation Cap', '🎓', 'armtrade', { at: [53, 26, -13, 1.15], art: '<path d="M-14 -8 L-14 2 C-14 7 14 7 14 2 L14 -8 Z" fill="#2b2b2b" stroke="#000" stroke-width="2"/><path d="M0 -24 L30 -13 L0 -2 L-30 -13 Z" fill="#1f1f1f" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M0 -13 L24 -9 L24 5" stroke="#cbae57" stroke-width="2.2" fill="none"/><circle cx="24" cy="6" r="3" fill="#cbae57"/><circle cx="0" cy="-13" r="2" fill="#cbae57"/>' });
+  C('crown', 'hat', 'Crown', '👑', 'topspud', { at: [53, 26, -13, 1.15], art: '<path d="M-21 4 L-24 -20 L-11 -9 L0 -25 L11 -9 L24 -20 L21 4 Z" fill="#c9ae42" stroke="#7d6525" stroke-width="2.5" stroke-linejoin="round"/><rect x="-21" y="-3" width="42" height="7" fill="#b69536" stroke="#7d6525" stroke-width="2"/><circle cx="-12" cy="0.5" r="2.2" fill="#b75959"/><circle cx="0" cy="0.5" r="2.2" fill="#5980b7"/><circle cx="12" cy="0.5" r="2.2" fill="#b75959"/>' });
+
+  C('bandaid', 'face', 'Band-Aid', '🩹', 'blisters', { at: [67, 38, 22, 1.2], art: '<rect x="-14" y="-5" width="28" height="10" rx="5" fill="#e2cdb1" stroke="#b98a52" stroke-width="1.8"/><rect x="-5" y="-5" width="10" height="10" fill="#d8be9e" stroke="#b98a52" stroke-width="1.2"/><circle cx="-9" cy="0" r="0.9" fill="#b98a52"/><circle cx="9" cy="0" r="0.9" fill="#b98a52"/>' });
+  C('shades', 'face', 'Sunglasses', '🕶️', 'handsoff', { at: [51, 50, -13, 1.35], art: '<path d="M-31 -3 L-22 -1 M31 -3 L22 -1" stroke="#111" stroke-width="3" stroke-linecap="round"/><path d="M-3 -2 Q0 -5 3 -2" stroke="#111" stroke-width="3" fill="none"/><path d="M-22 -4 C-22 3 -17 8 -11 8 C-4 8 -2 3 -2 -4 Z" fill="#141414" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M22 -4 C22 3 17 8 11 8 C4 8 2 3 2 -4 Z" fill="#141414" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M-18 0 L-13 0 M6 0 L11 0" stroke="#fff" stroke-width="1.8" opacity=".55" stroke-linecap="round"/>' });
+  C('glasses', 'face', 'Reading Glasses', '👓', 'serious', { at: [51, 50, -13, 1.35], art: '<circle cx="-11" cy="1" r="9" fill="rgba(190,225,255,.35)" stroke="#2c2c2c" stroke-width="2.6"/><circle cx="11" cy="1" r="9" fill="rgba(190,225,255,.35)" stroke="#2c2c2c" stroke-width="2.6"/><path d="M-2 0 Q0 -2 2 0" stroke="#2c2c2c" stroke-width="2.6" fill="none"/><path d="M-20 -1 L-28 -4 M20 -1 L28 -4" stroke="#2c2c2c" stroke-width="2.4" stroke-linecap="round"/>' });
+  C('goggles', 'face', 'Lab Goggles', '🥽', 'armsci', { at: [51, 50, -13, 1.35], art: '<rect x="-30" y="-6" width="60" height="14" rx="6" fill="#3a6ea5" stroke="#2c4057" stroke-width="2"/><circle cx="-12" cy="1" r="10" fill="#d9ebf5" stroke="#2c4057" stroke-width="3"/><circle cx="12" cy="1" r="10" fill="#d9ebf5" stroke="#2c4057" stroke-width="3"/><path d="M-17 -3 Q-14 -6 -10 -5 M7 -3 Q10 -6 14 -5" stroke="#fff" stroke-width="2" fill="none" opacity=".85" stroke-linecap="round"/>' });
+  C('sleepy', 'face', 'Sleepy Zzz', '💤', 'sleep', { at: [51, 50, -13, 1.35], art: '<path d="M-19 0 Q-13 6 -7 0 M7 0 Q13 6 19 0" stroke="#3f2c1d" stroke-width="3" fill="none" stroke-linecap="round"/><g font-family="Comic Sans MS, cursive" font-weight="700" fill="#7491c0" stroke="#ffffff" stroke-width="0.8"><text x="26" y="-22" font-size="15">Z</text><text x="36" y="-34" font-size="11">z</text><text x="43" y="-43" font-size="8">z</text></g>' });
+  C('tongue', 'face', 'Tongue Out', '👅', 'silly', { at: [52, 68, -13, 1.3], art: '<circle cx="-12" cy="-16" r="3" fill="#23170f"/><circle cx="12" cy="-16" r="3" fill="#23170f"/><path d="M-15 0 Q0 11 15 0" stroke="#402822" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M-2 5 C-2 18 12 18 12 5 Z" fill="#e597a4" stroke="#b9455a" stroke-width="2" stroke-linejoin="round"/><path d="M5 7 L5 13" stroke="#b9455a" stroke-width="1.6" stroke-linecap="round"/>' });
+
+  C('silver',  'skin', 'Silver',         '🥔', 'warehouse', { filter: 'grayscale(1) brightness(1.35) contrast(1.15)' });
+  C('purple',  'skin', 'Purple',         '🥔', 'toomany',   { filter: 'hue-rotate(250deg) saturate(1.3)' });
+  C('rainbow', 'skin', 'Rainbow',        '🥔', 'counting',  { rainbow: true });
+  C('shadow',  'skin', 'Shadow',         '🥔', 'heavyhand', { filter: 'brightness(0.3) contrast(1.2)' });
+  C('green',   'skin', 'Lucky Green',    '🥔', 'armluck',   { filter: 'hue-rotate(75deg) saturate(1.4)' });
+  C('golden',  'skin', 'Golden',         '🥔', 'golddigger',{ filter: 'sepia(0.7) saturate(2) hue-rotate(-12deg) brightness(1.1)' });
+  C('blue',    'skin', 'Ice Blue',       '🥔', 'strongback',{ filter: 'hue-rotate(185deg) saturate(1.4)' });
+
+  C('wood',    'ring', 'Wooden Ring',    '🪵', 'truckload', { cls: 'ring-wood' });
+  C('blueR',   'ring', 'Blue Dots',      '🔵', 'itself',    { cls: 'ring-blue' });
+  C('greenR',  'ring', 'Green Dashes',   '🟢', 'halfway',   { cls: 'ring-green' });
+  C('rainbowR','ring', 'Rainbow Ring',   '🌈', 'everything',{ cls: 'ring-rainbow' });
+  C('neon',    'ring', 'Neon Pink',      '🩷', 'side',      { cls: 'ring-neon' });
+  C('goldR',   'ring', 'Gold Ring',      '🟡', 'goldrush',  { cls: 'ring-gold' });
+
+  C('fries',   'spark', 'Fry Burst',     '🍟', 'snack',     { burst: '🍟' });
+  C('coins',   'spark', 'Coin Burst',    '💰', 'firstbuy',  { burst: '💰' });
+  C('glitter', 'spark', 'Sparkles',      '✨', 'shiny',     { burst: '✨' });
+  C('flames',  'spark', 'Flames',        '🔥', 'frenzy',    { burst: '🔥' });
+  C('zap',     'spark', 'Lightning',     '⚡', 'bigdig',    { burst: '⚡' });
+  C('seeds',   'spark', 'Seed Burst',    '🌱', 'replant1',  { burst: '🌱' });
+  C('wizard',  'hat',   'Wizard Hat',    '🪄', 'replant3',  { at: [53, 26, -13, 0.95], art: '<ellipse cx="0" cy="4" rx="30" ry="6" fill="#4a3190" stroke="#342b55" stroke-width="2.5"/><path d="M-22 4 L4 -42 L22 4 Z" fill="#5b3fa8" stroke="#342b55" stroke-width="2.5" stroke-linejoin="round"/><path d="M-16 -8 L16 -8 L21 -2 L-21 -2 Z" fill="#cbae57"/><polygon points="2,-30 3.5,-26 8,-26 4.5,-23 5.8,-19 2,-21.5 -1.8,-19 -0.5,-23 -4,-26 0.5,-26" fill="#e0ce85"/>' });
+  C('mustache','face',  'Fancy Mustache','🥸', 'replant10', { at: [52, 62, -13, 1.3], art: '<circle cx="-12" cy="-18" r="3" fill="#23170f"/><circle cx="12" cy="-18" r="3" fill="#23170f"/><path d="M0 -2 C-4 -9 -17 -8 -22 0 C-24 4 -20 6 -16 3 C-10 0 -4 2 0 4 C4 2 10 0 16 3 C20 6 24 4 22 0 C17 -8 4 -9 0 -2 Z" fill="#3b2314" stroke="#19100b" stroke-width="1.5" stroke-linejoin="round"/>' });
+
+  const cosById = {};
+  cosmeticDefs.forEach(c => cosById[c.id] = c);
+  const achById = {};
+  achDefs.forEach(a => achById[a.id] = a);
+  const equipped = { hat: null, face: null, skin: null, ring: null, spark: null };
+
+  const previewDisc = el('preview-disc');
+  const wardBodyEl = el('ward-body');
+  const wardSub = el('ward-sub');
+
+  let potatoUid = 0;
+  const VIEWBOX = '-6 -14 112 114';
+  function potatoMarkup(skin, hat, face) {
+    const id = 'pg' + (potatoUid++);
+    const skinStyle = skin && skin.filter ? ' style="filter:' + skin.filter + '"' : '';
+    const body = '<svg class="potato-svg' + (skin && skin.rainbow ? ' rainbow' : '') + '" viewBox="' + VIEWBOX + '"' + skinStyle + '>'
+      + '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c7a987"/><stop offset="1" stop-color="#a06a3a"/></linearGradient></defs>'
+      + '<g transform="rotate(-13 50 56)">'
+      + '<path d="M50 27 C72 22 93 34 92 56 C91 78 68 88 46 86 C24 84 8 72 10 52 C12 36 30 30 50 27 Z" fill="url(#' + id + ')" stroke="#5f4733" stroke-width="3.5" stroke-linejoin="round"/>'
+      + '<ellipse cx="36" cy="40" rx="12" ry="5" fill="#fff" opacity="0.22" transform="rotate(-10 36 40)"/>'
+      + '<ellipse cx="28" cy="60" rx="3.4" ry="2.3" fill="#7b4f2a"/><ellipse cx="68" cy="42" rx="3" ry="2" fill="#7b4f2a"/>'
+      + '<ellipse cx="64" cy="70" rx="3.6" ry="2.4" fill="#7b4f2a"/><ellipse cx="44" cy="74" rx="2.6" ry="1.8" fill="#7b4f2a"/>'
+      + '<ellipse cx="80" cy="58" rx="2.4" ry="1.7" fill="#7b4f2a"/><ellipse cx="22" cy="46" rx="2.2" ry="1.6" fill="#7b4f2a"/>'
+      + '</g></svg>';
+    let gear = '';
+    [face, hat].forEach(c => {
+      if (c) gear += '<g transform="translate(' + c.at[0] + ' ' + c.at[1] + ') rotate(' + c.at[2] + ') scale(' + c.at[3] + ')">' + c.art + '</g>';
+    });
+    return '<span class="potato-wrap">' + body + '<svg class="potato-svg" viewBox="' + VIEWBOX + '">' + gear + '</svg></span>';
+  }
+  function currentPotato() {
+    return potatoMarkup(cosById[equipped.skin], cosById[equipped.hat], cosById[equipped.face]);
+  }
+  function applyPotato() {
+    const ring = cosById[equipped.ring];
+    const cls = 'potato-disc' + (ring ? ' ' + ring.cls : '');
+    btn.className = cls;
+    btn.innerHTML = currentPotato();
+    previewDisc.className = cls;
+    previewDisc.innerHTML = currentPotato();
+  }
+
+  function cosTile(slot, c) {
+    const b = document.createElement('button');
+    const unlocked = !c || earnedAch.has(c.ach);
+    const isOn = c ? equipped[slot.id] === c.id : !equipped[slot.id];
+    b.className = 'cos' + (unlocked ? '' : ' locked') + (isOn ? ' equipped' : '');
+    const icon = document.createElement('span');
+    icon.className = 'c-icon';
+    const wears = slot.id === 'hat' || slot.id === 'face' || slot.id === 'skin';
+    if (unlocked && wears && (c || slot.id === 'skin')) {
+      icon.className = 'mini';
+      icon.innerHTML = potatoMarkup(slot.id === 'skin' ? c : null, slot.id === 'hat' ? c : null, slot.id === 'face' ? c : null);
+    } else {
+      icon.textContent = unlocked ? (c ? c.icon : slot.noneIcon) : '🔒';
+    }
+    const name = document.createElement('span');
+    name.className = 'c-name';
+    name.textContent = c ? c.name : slot.none;
+    b.appendChild(icon);
+    b.appendChild(name);
+    if (c && !unlocked) {
+      const hint = document.createElement('span');
+      hint.className = 'c-hint';
+      hint.textContent = 'Earn: ' + achById[c.ach].name;
+      b.appendChild(hint);
+    }
+    if (unlocked) {
+      b.addEventListener('click', () => {
+        equipped[slot.id] = c ? c.id : null;
+        sfx.equip();
+        applyPotato();
+        renderWardrobe();
+        saveGame();
+      });
+    }
+    return b;
+  }
+  function renderWardrobe() {
+    wardBodyEl.innerHTML = '';
+    SLOTS.forEach(slot => {
+      const sec = document.createElement('div');
+      sec.className = 'ward-slot';
+      const h = document.createElement('h3');
+      h.textContent = slot.label;
+      sec.appendChild(h);
+      const grid = document.createElement('div');
+      grid.className = 'ward-grid';
+      grid.appendChild(cosTile(slot, null));
+      cosmeticDefs.filter(c => c.slot === slot.id).forEach(c => grid.appendChild(cosTile(slot, c)));
+      sec.appendChild(grid);
+      wardBodyEl.appendChild(sec);
+    });
+    const have = cosmeticDefs.filter(c => earnedAch.has(c.ach)).length;
+    wardSub.textContent = have + ' of ' + cosmeticDefs.length + ' unlocked. Earn achievements to get more.';
+  }
+  function updateWardBadge() {
+    wardBadge.textContent = unseenCos;
+    wardBadge.classList.toggle('hidden', unseenCos === 0);
+  }
+
+  function burst(x, y) {
+    const c = cosById[equipped.spark];
+    if (!c) return;
+    for (let i = 0; i < 6; i++) {
+      const sp = document.createElement('div');
+      sp.className = 'spark';
+      sp.textContent = c.burst;
+      const angle = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 50;
+      sp.style.left = x + 'px';
+      sp.style.top = y + 'px';
+      sp.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      sp.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      document.body.appendChild(sp);
+      setTimeout(() => sp.remove(), 700);
+    }
+  }
+
+  const SAVE_KEY = 'potato-clicker-save-v1';
+  let storageOK = true;
+  try { localStorage.setItem('potato-clicker-test', '1'); localStorage.removeItem('potato-clicker-test'); } catch (e) { storageOK = false; }
+
+  function snapshot() {
+    return {
+      v: 1, savedAt: Date.now(),
+      potatoes: state.potatoes, runEarned: state.runEarned, totalEarned: state.totalEarned,
+      totalClicks: state.totalClicks, bigDigs: state.bigDigs, goldenCaught: state.goldenCaught,
+      bestFrenzyClicks: state.bestFrenzyClicks, bestPerSecond: state.bestPerSecond, playSeconds: state.playSeconds,
+      seeds: state.seeds, replants: state.replants, wins: state.wins, sound: state.soundOn,
+      owned: Object.keys(state.owned), ach: Array.from(earnedAch), equipped: Object.assign({}, equipped)
+    };
+  }
+  const num = v => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : 0);
+
+  function applySave(d) {
+    if (!d || typeof d !== 'object') throw new Error('bad save');
+    state.potatoes = num(d.potatoes); state.runEarned = num(d.runEarned); state.totalEarned = num(d.totalEarned);
+    state.totalClicks = num(d.totalClicks); state.bigDigs = num(d.bigDigs); state.goldenCaught = num(d.goldenCaught);
+    state.bestFrenzyClicks = num(d.bestFrenzyClicks); state.bestPerSecond = num(d.bestPerSecond); state.playSeconds = num(d.playSeconds);
+    state.seeds = num(d.seeds); state.replants = num(d.replants); state.wins = num(d.wins);
+    state.soundOn = d.sound !== false;
+    state.owned = {};
+    (Array.isArray(d.owned) ? d.owned : []).forEach(id => { if (upgradeById[id]) state.owned[id] = true; });
+    let pruned = true;
+    while (pruned) {
+      pruned = false;
+      Object.keys(state.owned).forEach(id => {
+        if (!upgradeById[id].req.every(r => state.owned[r])) {
+          delete state.owned[id];
+          state.potatoes += upgradeById[id].cost;
+          pruned = true;
+        }
+      });
+    }
+    earnedAch.clear();
+    (Array.isArray(d.ach) ? d.ach : []).forEach(id => { if (achById[id]) earnedAch.add(id); });
+    const eq = d.equipped && typeof d.equipped === 'object' ? d.equipped : {};
+    Object.keys(equipped).forEach(k => {
+      const c = cosById[eq[k]];
+      equipped[k] = c && c.slot === k && earnedAch.has(c.ach) ? c.id : null;
+    });
+    state.frenzyUntil = 0; state.frenzyClicks = 0; state.selected = null; state.ended = false;
+  }
+
+  function saveGame() {
+    if (!storageOK) return;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot())); } catch (e) { storageOK = false; }
+  }
+  function loadStored() {
+    if (!storageOK) return null;
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      if (raw.charAt(0) === '{') return JSON.parse(raw);
+      return JSON.parse(decodeURIComponent(atob(raw)));
+    } catch (e) { return null; }
+  }
+
+  function welcomeBack(savedAt) {
+    if (!savedAt) return;
+    const secs = Math.min((Date.now() - savedAt) / 1000, 8 * 3600);
+    if (secs < 30 || state.perSecond <= 0) return;
+    const gain = state.perSecond * secs * 0.5;
+    addPotatoes(gain);
+    const mins = Math.round(secs / 60);
+    notify('Welcome back! Your farm dug up ' + formatNum(gain) + ' potatoes while you were away (' + mins + ' min).', 'gold');
+  }
+
+  const statsListEl = el('stats-list');
+  const replantText = el('replant-text');
+  const replantBtn = el('replant-btn');
+
+  function seedGain() { return Math.max(1, Math.floor(Math.sqrt(state.runEarned / ENDING_COST))); }
+  function clock(total) {
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = Math.floor(total % 60);
+    return (h ? h + 'h ' : '') + m + 'm ' + sec + 's';
+  }
+
+  function renderStats() {
+    const haveCos = cosmeticDefs.filter(c => earnedAch.has(c.ach)).length;
+    const rows = [
+      ['Potatoes right now', formatNum(state.potatoes)],
+      ['Dug up this run', formatNum(state.runEarned)],
+      ['Dug up ever', formatNum(state.totalEarned)],
+      ['Per click', formatNum(state.perClick)],
+      ['Per second', formatNum(state.perSecond)],
+      ['Best per second', formatNum(state.bestPerSecond)],
+      ['Everything bonus', 'x' + state.mult.toFixed(2)],
+      ['Clicks', state.totalClicks.toLocaleString()],
+      ['Big digs', state.bigDigs.toLocaleString()],
+      ['Golden potatoes caught', state.goldenCaught.toLocaleString()],
+      ['Most clicks in one frenzy', state.bestFrenzyClicks.toLocaleString()],
+      ['Upgrades this run', Object.keys(state.owned).length + ' of ' + upgradeDefs.length],
+      ['Achievements', earnedAch.size + ' of ' + achDefs.length],
+      ['Cosmetics unlocked', haveCos + ' of ' + cosmeticDefs.length],
+      ['Seeds planted', state.seeds + (state.seeds ? ' (+' + state.seeds * 10 + '%)' : '')],
+      ['Times replanted', state.replants.toLocaleString()],
+      ['Time played', clock(state.playSeconds)]
+    ];
+    statsListEl.innerHTML = rows.map(r => '<div class="stat-row"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>').join('');
+    el('stats-sub').textContent = 'Everything you\u2019ve done so far.';
+
+    const won = !!state.owned.greatpotato;
+    const gain = seedGain();
+    if (won) {
+      replantText.textContent = 'Replanting gives you ' + gain + ' seed' + (gain === 1 ? '' : 's') + ', worth +' + gain * 10 + '% on everything forever. Your potatoes and upgrades start over. You keep your achievements, cosmetics, and seeds. The more you dig up before replanting, the more seeds you get.';
+    } else {
+      replantText.textContent = 'Buy The Great Potato first. After that you can replant: your potatoes and upgrades start over, but you keep your achievements and cosmetics, and each seed you earn adds 10% to everything forever.';
+    }
+    replantBtn.disabled = !won;
+    replantBtn.textContent = won ? 'Replant for ' + gain + ' seed' + (gain === 1 ? '' : 's') : 'Replant';
+    el('save-info').textContent = storageOK
+      ? 'Your game saves itself in this browser every few seconds and whenever you leave. There\u2019s nothing to copy or paste.'
+      : 'Saving doesn\u2019t work in this window, so your progress will be lost when you close it. Open the file in your own browser to keep your game.';
+    el('sound-setting').textContent = state.soundOn ? '🔊 Sound is on' : '🔇 Sound is off';
+  }
+
+  function updateSoundUI() {
+    el('sound-btn').textContent = state.soundOn ? '🔊' : '🔇';
+    el('sound-setting').textContent = state.soundOn ? '🔊 Sound is on' : '🔇 Sound is off';
+  }
+  function toggleSound() {
+    state.soundOn = !state.soundOn;
+    updateSoundUI();
+    if (state.soundOn) sfx.equip();
+    saveGame();
+  }
+  el('sound-btn').addEventListener('click', toggleSound);
+  el('sound-setting').addEventListener('click', toggleSound);
+
+  function confirmBox(text, yesLabel, onYes) {
+    const overlay = document.createElement('div');
+    overlay.className = 'ending-overlay';
+    overlay.innerHTML = '<div class="ending-box"><p></p><div class="row"><button id="yes-btn"></button><button class="alt" id="no-btn">Not yet</button></div></div>';
+    overlay.querySelector('p').textContent = text;
+    overlay.querySelector('#yes-btn').textContent = yesLabel;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#yes-btn').addEventListener('click', () => { overlay.remove(); onYes(); });
+    overlay.querySelector('#no-btn').addEventListener('click', () => overlay.remove());
+  }
+
+  function replant() {
+    const gain = seedGain();
+    state.seeds += gain;
+    state.replants++;
+    state.potatoes = 0;
+    state.runEarned = 0;
+    state.owned = {};
+    state.selected = null;
+    state.frenzyUntil = 0;
+    state.frenzyClicks = 0;
+    state.ended = false;
+    recalc();
+    render();
+    sfx.replant();
+    notify('Replanted! You now have ' + state.seeds + ' seed' + (state.seeds === 1 ? '' : 's') + ' (+' + state.seeds * 10 + '% on everything).', 'gold');
+    saveGame();
+  }
+  replantBtn.addEventListener('click', () => {
+    if (!state.owned.greatpotato) return;
+    const gain = seedGain();
+    confirmBox('Replant the farm for ' + gain + ' seed' + (gain === 1 ? '' : 's') + '? Your potatoes and upgrades start over. Achievements, cosmetics and seeds stay.', 'Replant', replant);
+  });
+
+  function showEnding() {
+    state.ended = true;
+    sfx.win();
+    const gain = seedGain();
+    const overlay = document.createElement('div');
+    overlay.className = 'ending-overlay';
+    overlay.innerHTML = `
+      <div class="ending-box">
+        <div class="ending-potato">👑🥔</div>
+        <h2>That\u2019s a lot of potatoes.</h2>
+        <p>The Great Potato is yours. Every field, truck, and moon patch is working for you now.</p>
+        <p>You\u2019ve still got ${formatNum(state.potatoes)} in the bank. Keep digging, or replant the farm for ${gain} seed${gain === 1 ? '' : 's'} (+${gain * 10}% on everything, forever).</p>
+        <div class="row">
+          <button id="replant-now">Replant the farm</button>
+          <button class="alt" id="keep-playing">Keep digging</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#keep-playing').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#replant-now').addEventListener('click', () => { overlay.remove(); replant(); });
+  }
+
+  function spawnFloatText(x, y, amount, crit) {
+    const f = document.createElement('div');
+    f.className = 'float-pop' + (crit ? ' crit' : '');
+    f.textContent = (crit ? 'Big dig! +' : '+') + formatNum(amount);
+    f.style.left = (x - 10) + 'px';
+    f.style.top = (y - 20) + 'px';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 800);
+  }
+
+  btn.addEventListener('click', (e) => {
+    state.totalClicks++;
+    const isCrit = Math.random() < state.crit;
+    if (isCrit) state.bigDigs++;
+    if (frenzyActive()) {
+      state.frenzyClicks++;
+      state.bestFrenzyClicks = Math.max(state.bestFrenzyClicks, state.frenzyClicks);
+    }
+    const gain = state.perClick * frenzyMult() * (isCrit ? 5 : 1);
+    if (isCrit) sfx.big(); else sfx.click();
+    addPotatoes(gain);
+    spawnFloatText(e.clientX, e.clientY, gain, isCrit);
+    burst(e.clientX, e.clientY);
+    render();
+  });
+
+  let ticks = 0;
+  setInterval(() => {
+    state.playSeconds++;
+    if (state.perSecond > 0) {
+      addPotatoes(state.perSecond * frenzyMult());
+      render();
+    }
+    if (drawerOpen() && currentView === 'stats') renderStats();
+    ticks++;
+    if (ticks % 10 === 0) saveGame();
+  }, 1000);
+  window.addEventListener('beforeunload', saveGame);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+
+  let frenzyWasOn = false;
+  setInterval(() => {
+    const on = frenzyActive();
+    if (on) updateFrenzyUI();
+    if (on !== frenzyWasOn) { frenzyWasOn = on; if (!on) sfx.frenzyEnd(); render(); }
+  }, 250);
+
+  function spawnGoldenPotato() {
+    const gp = document.createElement('div');
+    gp.className = 'golden-potato';
+    gp.textContent = '🥔';
+    gp.style.left = (Math.random() * (window.innerWidth - 80) + 10) + 'px';
+    gp.style.top = (Math.random() * (window.innerHeight - 160) + 80) + 'px';
+    document.body.appendChild(gp);
+    sfx.goldenAppear();
+
+    const fadeTimer = setTimeout(() => {
+      gp.remove();
+      scheduleGoldenPotato(0);
+    }, 8000);
+    gp.addEventListener('click', () => {
+      clearTimeout(fadeTimer);
+      gp.remove();
+      state.goldenCaught++;
+      sfx.golden();
+      const seconds = FRENZY_SECONDS + state.goldBonus;
+      state.frenzyClicks = 0;
+      state.frenzyUntil = Date.now() + seconds * 1000;
+      notify('Golden potato! Everything is x' + FRENZY_MULT + ' for ' + seconds + ' seconds.', 'gold');
+      frenzyWasOn = true;
+      scheduleGoldenPotato(seconds * 1000);
+      render();
+    });
+  }
+  function scheduleGoldenPotato(waitMs) {
+    setTimeout(spawnGoldenPotato, waitMs + (30000 + Math.random() * 30000) * state.goldDelay);
+  }
+
+  const drifters = el('drifters');
+  for (let i = 0; i < 14; i++) {
+    const d = document.createElement('div');
+    d.className = 'drifter';
+    d.textContent = '🥔';
+    d.style.left = (Math.random() * 100) + '%';
+    d.style.fontSize = (22 + Math.random() * 36) + 'px';
+    d.style.animationDuration = (22 + Math.random() * 26) + 's';
+    d.style.animationDelay = (-Math.random() * 40) + 's';
+    drifters.appendChild(d);
+  }
+
+  buildMap();
+  const stored = loadStored();
+  if (stored) {
+    try {
+      applySave(stored);
+      recalc();
+      welcomeBack(stored.savedAt);
+    } catch (e) {}
+  }
+  applyPotato();
+  renderAch();
+  recalc();
+  render();
+  updateSoundUI();
+  scheduleGoldenPotato(0);
+})();
+</script>
+</body>
+</html>
